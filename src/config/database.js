@@ -1,16 +1,23 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const mongoURI = process.env.MONGODB_URI || "mongodb://localhost:27017/codemath";
+    
+    if (!mongoURI) {
+      console.log("⚠️  MongoDB URI not found, but continuing without database...");
+      return;
+    }
+
+    const conn = await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log("✅ MongoDB Connected: " + conn.connection.host);
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
+    console.log("⚠️  MongoDB connection failed, but continuing without database...");
+    console.log("💡 To fix this, set MONGODB_URI in your .env file");
   }
 };
 

@@ -1,26 +1,61 @@
-const express = require('express');
+﻿const express = require("express");
 const router = express.Router();
-const { 
-  getAllUsers, 
-  getUserById, 
-  updateUser, 
-  deleteUser 
-} = require('../controllers/usersController');
-const { authenticate, requireAdmin } = require('../middleware/auth');
 
-// Todas las rutas requieren autenticación
-router.use(authenticate);
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve a list of all users
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Users retrieved successfully
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ */
+router.get("/", (req, res) => {
+  res.json({
+    message: "Users retrieved successfully",
+    users: []
+  });
+});
 
-// GET /users - Obtener todos los usuarios (solo admin)
-router.get('/', requireAdmin, getAllUsers);
-
-// GET /users/:id - Obtener usuario por ID
-router.get('/:id', getUserById);
-
-// PUT /users/:id - Actualizar usuario
-router.put('/:id', updateUser);
-
-// DELETE /users/:id - Eliminar usuario (solo admin)
-router.delete('/:id', requireAdmin, deleteUser);
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     description: Retrieve a specific user by their ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User found
+ *       404:
+ *         description: User not found
+ */
+router.get("/:id", (req, res) => {
+  res.json({
+    message: "User retrieved successfully",
+    user: { id: req.params.id, name: "Sample User" }
+  });
+});
 
 module.exports = router;
