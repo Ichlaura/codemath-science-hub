@@ -11,23 +11,18 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Users retrieved successfully
- *                 users:
- *                   type: array
- *                   items:
- *                     type: object
  */
 router.get("/", (req, res) => {
   res.json({
     message: "Users retrieved successfully",
-    users: []
+    users: [
+      {
+        id: "1",
+        name: "John Doe",
+        email: "john@example.com",
+        role: "parent"
+      }
+    ]
   });
 });
 
@@ -44,7 +39,6 @@ router.get("/", (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
  *     responses:
  *       200:
  *         description: User found
@@ -54,7 +48,123 @@ router.get("/", (req, res) => {
 router.get("/:id", (req, res) => {
   res.json({
     message: "User retrieved successfully",
-    user: { id: req.params.id, name: "Sample User" }
+    user: { 
+      id: req.params.id, 
+      name: "Sample User",
+      email: "user@example.com",
+      role: "parent"
+    }
+  });
+});
+
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user
+ *     description: Register a new user in the system
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *                 enum: [parent, admin]
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error
+ */
+router.post("/", (req, res) => {
+  const newUser = {
+    id: Date.now().toString(),
+    ...req.body,
+    createdAt: new Date().toISOString()
+  };
+  
+  res.status(201).json({
+    message: "User created successfully",
+    user: newUser
+  });
+});
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user
+ *     description: Update an existing user information
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       404:
+ *         description: User not found
+ */
+router.put("/:id", (req, res) => {
+  res.json({
+    message: "User updated successfully",
+    user: {
+      id: req.params.id,
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    }
+  });
+});
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     description: Remove a user from the system
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       404:
+ *         description: User not found
+ */
+router.delete("/:id", (req, res) => {
+  res.json({
+    message: "User deleted successfully",
+    deletedId: req.params.id
   });
 });
 
