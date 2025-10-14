@@ -1,6 +1,24 @@
 ﻿const express = require("express");
 const router = express.Router();
 
+// Datos de ejemplo para simular una base de datos
+let users = [
+  {
+    id: "1",
+    name: "John Doe",
+    email: "john@example.com",
+    role: "parent",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "2", 
+    name: "Jane Smith",
+    email: "jane@example.com",
+    role: "admin",
+    createdAt: new Date().toISOString()
+  }
+];
+
 /**
  * @swagger
  * /users:
@@ -15,14 +33,7 @@ const router = express.Router();
 router.get("/", (req, res) => {
   res.json({
     message: "Users retrieved successfully",
-    users: [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "john@example.com",
-        role: "parent"
-      }
-    ]
+    users: users
   });
 });
 
@@ -46,14 +57,19 @@ router.get("/", (req, res) => {
  *         description: User not found
  */
 router.get("/:id", (req, res) => {
+  const userId = req.params.id;
+  const user = users.find(u => u.id === userId);
+  
+  if (!user) {
+    return res.status(404).json({
+      error: "User not found",
+      message: `User with ID ${userId} does not exist`
+    });
+  }
+
   res.json({
     message: "User retrieved successfully",
-    user: { 
-      id: req.params.id, 
-      name: "Sample User",
-      email: "user@example.com",
-      role: "parent"
-    }
+    user: user
   });
 });
 
@@ -89,11 +105,25 @@ router.get("/:id", (req, res) => {
  *         description: Validation error
  */
 router.post("/", (req, res) => {
+  const { name, email, role = 'parent' } = req.body;
+
+  // Validación básica
+  if (!name || !email) {
+    return res.status(400).json({
+      error: "Validation error",
+      message: "Name and email are required"
+    });
+  }
+
   const newUser = {
     id: Date.now().toString(),
-    ...req.body,
+    name,
+    email,
+    role,
     createdAt: new Date().toISOString()
   };
+
+  users.push(newUser);
   
   res.status(201).json({
     message: "User created successfully",
@@ -132,13 +162,25 @@ router.post("/", (req, res) => {
  *         description: User not found
  */
 router.put("/:id", (req, res) => {
+  const userId = req.params.id;
+  const userIndex = users.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    return res.status(404).json({
+      error: "User not found",
+      message: `User with ID ${userId} does not exist`
+    });
+  }
+
+  users[userIndex] = {
+    ...users[userIndex],
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+
   res.json({
     message: "User updated successfully",
-    user: {
-      id: req.params.id,
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    }
+    user: users[userIndex]
   });
 });
 
@@ -162,9 +204,21 @@ router.put("/:id", (req, res) => {
  *         description: User not found
  */
 router.delete("/:id", (req, res) => {
+  const userId = req.params.id;
+  const userIndex = users.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    return res.status(404).json({
+      error: "User not found",
+      message: `User with ID ${userId} does not exist`
+    });
+  }
+
+  users.splice(userIndex, 1);
+
   res.json({
     message: "User deleted successfully",
-    deletedId: req.params.id
+    deletedId: userId
   });
 });
 
