@@ -1,6 +1,17 @@
 ﻿const express = require("express");
 const router = express.Router();
 
+// Array en memoria para almacenar productos
+let products = [
+  {
+    id: "1",
+    name: "Math Adventure Game",
+    category: "math",
+    price: 9.99,
+    type: "game"
+  }
+];
+
 /**
  * @swagger
  * /products:
@@ -15,15 +26,7 @@ const router = express.Router();
 router.get("/", (req, res) => {
   res.json({
     message: "Products retrieved successfully",
-    products: [
-      {
-        id: "1",
-        name: "Math Adventure Game",
-        category: "math",
-        price: 9.99,
-        type: "game"
-      }
-    ]
+    products: products
   });
 });
 
@@ -47,15 +50,19 @@ router.get("/", (req, res) => {
  *         description: Product not found
  */
 router.get("/:id", (req, res) => {
+  const productId = req.params.id;
+  const product = products.find(p => p.id === productId);
+  
+  if (!product) {
+    return res.status(404).json({
+      error: "Product not found",
+      code: "PRODUCT_NOT_FOUND"
+    });
+  }
+  
   res.json({
     message: "Product retrieved successfully",
-    product: { 
-      id: req.params.id, 
-      name: "Sample Product",
-      category: "programming",
-      price: 19.99,
-      type: "course"
-    }
+    product: product
   });
 });
 
@@ -94,11 +101,27 @@ router.get("/:id", (req, res) => {
  *         description: Validation error
  */
 router.post("/", (req, res) => {
+  const { name, category, price, type } = req.body;
+  
+  // Validación básica
+  if (!name || !category || !price) {
+    return res.status(400).json({
+      error: "Missing required fields: name, category, price",
+      code: "VALIDATION_ERROR"
+    });
+  }
+  
   const newProduct = {
-    id: Date.now().toString(),
-    ...req.body,
+    id: Date.now().toString(), // ID único basado en timestamp
+    name,
+    category,
+    price,
+    type: type || "course",
     createdAt: new Date().toISOString()
   };
+  
+  // Agregar el nuevo producto al array
+  products.push(newProduct);
   
   res.status(201).json({
     message: "Product created successfully",
@@ -137,13 +160,28 @@ router.post("/", (req, res) => {
  *         description: Product not found
  */
 router.put("/:id", (req, res) => {
+  const productId = req.params.id;
+  const productIndex = products.findIndex(p => p.id === productId);
+  
+  if (productIndex === -1) {
+    return res.status(404).json({
+      error: "Product not found",
+      code: "PRODUCT_NOT_FOUND"
+    });
+  }
+  
+  // Actualizar el producto
+  const updatedProduct = {
+    ...products[productIndex],
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+  
+  products[productIndex] = updatedProduct;
+  
   res.json({
     message: "Product updated successfully",
-    product: {
-      id: req.params.id,
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    }
+    product: updatedProduct
   });
 });
 
@@ -167,9 +205,22 @@ router.put("/:id", (req, res) => {
  *         description: Product not found
  */
 router.delete("/:id", (req, res) => {
+  const productId = req.params.id;
+  const productIndex = products.findIndex(p => p.id === productId);
+  
+  if (productIndex === -1) {
+    return res.status(404).json({
+      error: "Product not found",
+      code: "PRODUCT_NOT_FOUND"
+    });
+  }
+  
+  // Eliminar el producto
+  const deletedProduct = products.splice(productIndex, 1)[0];
+  
   res.json({
     message: "Product deleted successfully",
-    deletedId: req.params.id
+    deletedProduct: deletedProduct
   });
 });
 
