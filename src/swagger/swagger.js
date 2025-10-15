@@ -107,7 +107,7 @@ const options = {
       }
     }
   },
-  apis: ["./src/routes/*.js"]
+  apis: ["./src/routes/*.js"]  // Vuelve a esta pero con diagnóstico
 };
 
 const specs = swaggerJsdoc(options);
