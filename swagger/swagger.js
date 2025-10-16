@@ -1,4 +1,5 @@
-﻿const swaggerJsdoc = require("swagger-jsdoc");
+﻿
+const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
 const options = {
@@ -107,7 +108,7 @@ const options = {
       }
     }
   },
-  apis: ["./src/routes/*.js"]  // Vuelve a esta pero con diagnóstico
+  apis: ["./routes/*.js"]  // Vuelve a esta pero con diagnóstico
 };
 
 const specs = swaggerJsdoc(options);
