@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { authenticateJWT } = require('../config/oauth');
 
+let orders = []; // Array en memoria para almacenar órdenes
+
 /**
  * @swagger
  * tags:
@@ -24,7 +26,7 @@ const { authenticateJWT } = require('../config/oauth');
  *         description: Unauthorized
  */
 router.get('/', authenticateJWT, (req, res) => {
-  res.json({ message: 'Get all orders - protected' });
+  res.json({ message: 'Orders retrieved successfully', orders });
 });
 
 /**
@@ -50,7 +52,9 @@ router.get('/', authenticateJWT, (req, res) => {
  *         description: Order not found
  */
 router.get('/:id', authenticateJWT, (req, res) => {
-  res.json({ message: 'Get order by ID - protected', id: req.params.id });
+  const order = orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found", code: "ORDER_NOT_FOUND" });
+  res.json({ message: 'Order retrieved successfully', order });
 });
 
 /**
@@ -89,7 +93,21 @@ router.get('/:id', authenticateJWT, (req, res) => {
  *         description: Unauthorized
  */
 router.post('/', authenticateJWT, (req, res) => {
-  res.status(201).json({ message: 'Create order - protected' });
+  const { products: orderProducts } = req.body;
+  if (!orderProducts || !Array.isArray(orderProducts) || orderProducts.length === 0) {
+    return res.status(400).json({ error: "Products are required", code: "VALIDATION_ERROR" });
+  }
+
+  const newOrder = {
+    id: Date.now().toString(),
+    userId: req.user.id,
+    products: orderProducts,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  orders.push(newOrder);
+  res.status(201).json({ message: 'Order created successfully', order: newOrder });
 });
 
 /**
@@ -127,7 +145,45 @@ router.post('/', authenticateJWT, (req, res) => {
  *         description: Order not found
  */
 router.put('/:id', authenticateJWT, (req, res) => {
-  res.json({ message: 'Update order - protected', id: req.params.id });
+  const orderIndex = orders.findIndex(o => o.id === req.params.id);
+  if (orderIndex === -1) return res.status(404).json({ error: "Order not found", code: "ORDER_NOT_FOUND" });
+
+  const updatedOrder = {
+    ...orders[orderIndex],
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+
+  orders[orderIndex] = updatedOrder;
+  res.json({ message: 'Order updated successfully', order: updatedOrder });
+});
+
+/**
+ * @swagger
+ * /orders/{id}:
+ *   delete:
+ *     summary: Delete an order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order deleted successfully
+ *       404:
+ *         description: Order not found
+ */
+router.delete('/:id', authenticateJWT, (req, res) => {
+  const orderIndex = orders.findIndex(o => o.id === req.params.id);
+  if (orderIndex === -1) return res.status(404).json({ error: "Order not found", code: "ORDER_NOT_FOUND" });
+
+  const deletedOrder = orders.splice(orderIndex, 1)[0];
+  res.json({ message: 'Order deleted successfully', deletedOrder });
 });
 
 module.exports = router;

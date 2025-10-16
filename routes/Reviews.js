@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { authenticateJWT } = require('../config/oauth');
 
+let reviews = []; // Array en memoria para almacenar reviews
+
 /**
  * @swagger
  * tags:
@@ -24,7 +26,7 @@ const { authenticateJWT } = require('../config/oauth');
  *         description: Unauthorized
  */
 router.get('/', authenticateJWT, (req, res) => {
-  res.json({ message: 'Get all reviews - protected' });
+  res.json({ message: 'Reviews retrieved successfully', reviews });
 });
 
 /**
@@ -50,7 +52,33 @@ router.get('/', authenticateJWT, (req, res) => {
  *         description: Review not found
  */
 router.get('/:id', authenticateJWT, (req, res) => {
-  res.json({ message: 'Get review by ID - protected', id: req.params.id });
+  const review = reviews.find(r => r.id === req.params.id);
+  if (!review) return res.status(404).json({ error: "Review not found", code: "REVIEW_NOT_FOUND" });
+  res.json({ message: 'Review retrieved successfully', review });
+});
+
+/**
+ * @swagger
+ * /reviews/product/{productId}:
+ *   get:
+ *     summary: Get reviews by product (public)
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of reviews for a product
+ *       404:
+ *         description: No reviews found for this product
+ */
+router.get('/product/:productId', (req, res) => {
+  const productReviews = reviews.filter(r => r.product === req.params.productId);
+  if (productReviews.length === 0) return res.status(404).json({ error: "No reviews found for this product", code: "REVIEWS_NOT_FOUND" });
+  res.json({ message: 'Reviews retrieved successfully', reviews: productReviews });
 });
 
 /**
@@ -89,29 +117,101 @@ router.get('/:id', authenticateJWT, (req, res) => {
  *         description: Unauthorized
  */
 router.post('/', authenticateJWT, (req, res) => {
-  res.status(201).json({ message: 'Create review - protected' });
+  const { product, rating, comment } = req.body;
+  if (!product || !rating || !comment) {
+    return res.status(400).json({ error: "Missing required fields", code: "VALIDATION_ERROR" });
+  }
+
+  const newReview = {
+    id: Date.now().toString(),
+    userId: req.user.id,
+    product,
+    rating,
+    comment,
+    createdAt: new Date().toISOString()
+  };
+
+  reviews.push(newReview);
+  res.status(201).json({ message: 'Review created successfully', review: newReview });
 });
 
 /**
  * @swagger
- * /reviews/product/{productId}:
- *   get:
- *     summary: Get reviews by product (public)
+ * /reviews/{id}:
+ *   put:
+ *     summary: Update a review
  *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: productId
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *               comment:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Review updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Review not found
+ */
+router.put('/:id', authenticateJWT, (req, res) => {
+  const reviewIndex = reviews.findIndex(r => r.id === req.params.id);
+  if (reviewIndex === -1) return res.status(404).json({ error: "Review not found", code: "REVIEW_NOT_FOUND" });
+
+  const updatedReview = {
+    ...reviews[reviewIndex],
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+
+  reviews[reviewIndex] = updatedReview;
+  res.json({ message: 'Review updated successfully', review: updatedReview });
+});
+
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   delete:
+ *     summary: Delete a review
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: List of product reviews
+ *         description: Review deleted successfully
  *       404:
- *         description: Product not found
+ *         description: Review not found
  */
-router.get('/product/:productId', (req, res) => {
-  res.json({ message: 'Get reviews by product - public', productId: req.params.productId });
+router.delete('/:id', authenticateJWT, (req, res) => {
+  const reviewIndex = reviews.findIndex(r => r.id === req.params.id);
+  if (reviewIndex === -1) return res.status(404).json({ error: "Review not found", code: "REVIEW_NOT_FOUND" });
+
+  const deletedReview = reviews.splice(reviewIndex, 1)[0];
+  res.json({ message: 'Review deleted successfully', deletedReview });
 });
 
 module.exports = router;
