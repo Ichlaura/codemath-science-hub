@@ -17,6 +17,7 @@
     "supertest": "^6.3.3"
   },
   "scripts": {
+    "start": "node app.js",
     "dev": "node app.js",
     "test": "jest --testTimeout=10000 --verbose",
     "test:watch": "jest --watch --testTimeout=10000"
