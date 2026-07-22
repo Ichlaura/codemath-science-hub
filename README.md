@@ -31,4 +31,4 @@ Complete API documentation available at `/api-docs`
 
 ## 👤 Author
 
-Laura Nunez - Individual project for CSE341
+Laura Nunez - Individual project 
